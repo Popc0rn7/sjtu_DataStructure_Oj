@@ -1,35 +1,20 @@
-//
-// Created by Administrator on 2023/12/31.
-//
 #include <iostream>
 using namespace std;
 int matrix[6][6];
 int value[6][6];
+int value_[6][6];
+int dx[] = { 0,1,0,-1 },
+    dy[] = { 1,0,-1,0 };
 struct node{
     int x=0;
     int y=0;
     int status=0;
     int value=0;
-    node getSon(int type){
-        int x_=x,y_=y,status_ = status%4+1;
-        if(type == 1){
-            x_ = x+1;
-        }
-        else if(type == 2){
-            x_ = x -1;
-        }
-        else if(type == 3){
-            y_ = y+1;
-        }
-        else if(type == 4){
-            y_ = y-1;
-        }
-        node son ={x_,y_,status_,value+status*matrix[x_][y_]};
-        return son;
-    }
 };
 class SortHeap{
 public:
+    int length;
+
     SortHeap(int n){
         length = 0;
         heap = new node[4*n];
@@ -40,7 +25,6 @@ public:
         }
         cout<<endl;
     }
-    int returnlength() const { return length; }
     void enQueue(node newN){
         int insert = ++length;
         while(insert>1){
@@ -67,50 +51,53 @@ public:
         return toReturn;
     }
 private:
-    int length;
     node *heap;
 
 };
 bool isInsideGrid(int x, int y) {
     return (x >= 0 && x < 6 && y >= 0 && y < 6);
 }
+struct Stack{
+    int top;
+    node* stack;
+    Stack(int n){
+        stack = new node[4*n];
+        top=-1;
+    }
+    node pop(){
+        return stack[top--];
+    }
+    void push(node n){
+        stack[++top] = n;
+    }
+};
 int solution(int x1,int y1,int x2,int y2){
-    SortHeap heap(36);
+    SortHeap heap(100);
     node tmp = {x1,y1,1,0};
     heap.enQueue(tmp);
     value[x1][y1] = 0;
-    while(heap.returnlength()>0){
+    while(heap.length>0){
         tmp = heap.deQueue();
-        if(isInsideGrid(tmp.x+1,tmp.y)){
-            node son = tmp.getSon(1);
-            if(value[son.x][son.y] > son.value){
-                value[son.x][son.y] = son.value;
-                heap.enQueue(son);
-            }
-        }
-        if(isInsideGrid(tmp.x-1,tmp.y)){
-            node son = tmp.getSon(2);
-            if(value[son.x][son.y]>son.value){
-                value[son.x][son.y] = son.value;
-                heap.enQueue(son);
-            }
-        }
-        if(isInsideGrid(tmp.x,tmp.y+1)){
-            node son = tmp.getSon(3);
-            if(value[son.x][son.y]>son.value){
-                value[son.x][son.y]=son.value;
-                heap.enQueue(son);
-            }
-        }
-        if(isInsideGrid(tmp.x,tmp.y-1)){
-            node son = tmp.getSon(4);
-            if(value[son.x][son.y]>son.value){
-                value[son.x][son.y]=son.value;
-                heap.enQueue(son);
+        for(int i=0;i<4;i++){
+            int x_ = tmp.x+dx[i],y_ = tmp.y+dy[i];
+            if(isInsideGrid(x_,y_)){
+                node son = {x_,y_,(tmp.status%4+1),tmp.status*matrix[x_][y_]};
+                if(son.status==1||son.status==2){
+                    if(value[son.x][son.y] > son.value){
+                        value[son.x][son.y] = son.value;
+                        heap.enQueue(son);
+                    }
+                }
+                else{
+                    if(value_[son.x][son.y] > son.value){
+                        value_[son.x][son.y] = son.value;
+                        heap.enQueue(son);
+                    }
+                }
             }
         }
     }
-    return value[x2][y2];
+    return (value[x2][y2] <= value_[x2][y2])?value[x2][y2]:value_[x2][y2];
 }
 int main(){
     int time;
@@ -121,6 +108,7 @@ int main(){
             for(int j=0;j<6;j++){
                 cin>>matrix[i][j];
                 value[i][j]=100000;
+                value_[i][j]=100000;
             }
         }
         cin>>x1>>y1>>x2>>y2;
