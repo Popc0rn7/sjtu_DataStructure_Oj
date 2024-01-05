@@ -1,112 +1,4 @@
-/*
-#include <iostream>
-#include <vector>
 
-using namespace std;
-
-bool isInsideGrid(int x, int y, int n, int m) {
-    return (x >= 0 && x < n && y >= 0 && y < m);
-}
-
-bool isFourConnected(vector<vector<char>>& grid, int x, int y, int n, int m) {
-    vector<vector<bool>> visited(n, vector<bool>(m, false));
-    int dx[] = {0, 0, -1, 1};
-    int dy[] = {-1, 1, 0, 0};
-
-    visited[x][y] = true;
-    int connected = 1;
-
-    for (int i = 0; i < 4; i++) {
-        int newX = x + dx[i];
-        int newY = y + dy[i];
-
-        if (isInsideGrid(newX, newY, n, m) && !visited[newX][newY] && grid[newX][newY] == '.') {
-            visited[newX][newY] = true;
-            connected++;
-        }
-    }
-
-    return (connected == 4);
-}
-
-void dfs(vector<vector<char>>& grid, int x, int y, int n, int m) {
-    int dx[] = {0, 0, -1, 1};
-    int dy[] = {-1, 1, 0, 0};
-
-    if (!isInsideGrid(x, y, n, m) || grid[x][y] != '?') {
-        return;
-    }
-
-    grid[x][y] = '.';
-
-    for (int i = 0; i < 4; i++) {
-        int newX = x + dx[i];
-        int newY = y + dy[i];
-
-        dfs(grid, newX, newY, n, m);
-    }
-}
-
-string solve(vector<vector<char>>& grid, int n, int m) {
-    bool ambiguous = false;
-    bool hasUnknown = false;
-
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
-            if (grid[i][j] == '?') {
-                grid[i][j] = '.';
-                dfs(grid, i, j, n, m);
-
-                if (!isFourConnected(grid, i, j, n, m)) {
-                    return "Impossible";
-                }
-
-                ambiguous |= (grid[i][j] == '?');
-                hasUnknown = true;
-            }
-        }
-    }
-
-    if (ambiguous) {
-        return "Ambiguous";
-    } else if (hasUnknown) {
-        return "Impossible";
-    } else {
-        return "Possible";
-    }
-}
-
-int main() {
-    int n, m;
-    cin >> n >> m;
-
-    vector<vector<char>> grid(n, vector<char>(m));
-
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
-            cin >> grid[i][j];
-        }
-    }
-
-    string result = solve(grid, n, m);
-
-    if (result == "Ambiguous" || result == "Impossible") {
-        cout << result << endl;
-    } else {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                cout << grid[i][j];
-            }
-            cout << endl;
-        }
-    }
-
-    return 0;
-}
-*/
-
-// Created by Administrator on 2023/12/29.
-//
 #include <iostream>
 using namespace std;
 struct cd{
@@ -122,9 +14,11 @@ public:
 
         graph = new char*[n];
         isVisited = new bool*[n];
+        tmpVisited = new bool*[n];
         for(int i=0;i<n;i++){
             graph[i]= new char[m];
             isVisited[i] = new bool[m];
+            tmpVisited[i] = new bool[m];
             for(int j=0;j<m;j++){
                 cin>>graph[i][j];
                 isVisited[i][j] = false;
@@ -152,19 +46,20 @@ public:
 
             isVisited[row][column]=true;
             if(graph[row][column]=='.') land_touched++;
-            else unct[unct_num++] = {row,column};
+            else unct[++unct_num] = {row,column};
             if(isConnect(row+1,column)) Stack[++top] = {row+1,column};
             if(isConnect(row-1,column)) Stack[++top] = {row-1,column};
             if(isConnect(row,column+1)) Stack[++top] = {row,column+1};
             if(isConnect(row,column-1)) Stack[++top] = {row,column-1};
         }
         if(land_touched==land_num){
+            //cout<<"Possible"<<endl;
             if(check_ambiguous()) cout<<"Ambiguous"<<endl;
             else{
                 for(int i=0;i<n;i++){
                     for(int j=0;j<m;j++){
-                        if(isVisited[i][j]) cout<<'.'<<' ';
-                        else cout<<'#'<<' ';
+                        if(isVisited[i][j]) cout<<'.';
+                        else cout<<'#';
                     }
                     cout<<endl;
                 }
@@ -176,6 +71,7 @@ private:
     int n,m;
     char **graph;
     bool **isVisited;
+    bool **tmpVisited;
     cd unct[2000];
     int unct_num;
     int land_num;
@@ -192,26 +88,25 @@ private:
 
     bool check_ambiguous(){
 
-        while(unct_num>=0){
-
+        while(unct_num>0){
+            //cout<<unct_num<<' ';
             cd Stack[3000];
             int top = 0;
             Stack[top]= {start_land.row,start_land.column};
             int land_touched =0;
 
-            bool **Visited = new bool*[n];
-            for(int i=0;i<n;i++){
-                Visited[i] = new bool[m];
-                for(int j=0;j<m;j++) Visited[i][j] = false;
-            }
-            Visited[unct[unct_num].row][unct[unct_num].column] = true;
-            unct_num--;
+            for(int i=0;i<n;i++)
+                for(int j=0;j<m;j++) tmpVisited[i][j] = false;
 
+            tmpVisited[unct[unct_num].row][unct[unct_num].column] = true;
+            unct_num--;
+            //cout<<"About to loop"<<endl;
             while(top>=0){
                 int row = Stack[top].row;
                 int column = Stack[top].column;
-                if(Visited[row][column]){top--;continue;}
-                Visited[row][column]=true;
+                if(tmpVisited[row][column]) {top--;continue;}
+
+                tmpVisited[row][column]=true;
                 if(graph[row][column]=='.') land_touched++;
                 top--;
 
@@ -220,7 +115,9 @@ private:
                 if(isConnect(row,column+1)) Stack[++top] = {row,column+1};
                 if(isConnect(row,column-1)) Stack[++top] = {row,column-1};
             }
+            //cout<<"check feasible"<<endl;
             if(land_touched==land_num) return true;
+
         }
         return false;
     }
